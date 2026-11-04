@@ -2,8 +2,6 @@
 
 ![Grokus demo showing the usage overview and switching from Day to Week](Assets/grokus-showcase.gif)
 
-[Download the showcase video (MP4)](Assets/grokus-showcase.mp4)
-
 A macOS menu bar app for Grok Bot usage. After installation, left-click the menu bar meter and sign in to Cursor. Right-click the meter to switch between Day and Week. The app remembers the selected view and refreshes about once a minute while it runs.
 
 The Week meter shows the share of the included pool used. The Day meter shows estimated usage against an even daily share of the pool plus unused budget from prior days. The overview’s daily columns are measured in percentage points of the weekly pool. Cursor provides a cumulative total, so Grokus estimates daily usage by sampling it. Usage before the first sample cannot always be assigned to a day. If TokenMon has saved Grok Bot daily history on this Mac, Grokus imports it automatically. Use the arrows on the daily chart to browse earlier weeks. When both apps recorded a day, Grokus uses the larger estimate to avoid counting the same usage twice.
