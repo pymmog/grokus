@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Grokus</title>
+  <defs>
+    <linearGradient id="shell" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#263651"/>
+      <stop offset="1" stop-color="#0b1324"/>
+    </linearGradient>
+    <linearGradient id="daily">
+      <stop stop-color="#71f1df"/>
+      <stop offset="1" stop-color="#2fc7ba"/>
+    </linearGradient>
+    <linearGradient id="weekly">
+      <stop stop-color="#87bcff"/>
+      <stop offset="1" stop-color="#557df6"/>
+    </linearGradient>
+  </defs>
+  <rect x="72" y="84" width="880" height="880" rx="210" fill="#020813" opacity=".25"/>
+  <rect x="72" y="64" width="880" height="880" rx="210" fill="url(#shell)"/>
+  <rect x="80" y="72" width="864" height="864" rx="202" fill="none" stroke="#a7c7ff" stroke-opacity=".22" stroke-width="6"/>
+  <rect x="218" y="331" width="588" height="124" rx="62" fill="#435674"/>
+  <rect x="218" y="331" width="426" height="124" rx="62" fill="url(#daily)"/>
+  <rect x="218" y="553" width="588" height="124" rx="62" fill="#435674"/>
+  <rect x="218" y="553" width="285" height="124" rx="62" fill="url(#weekly)"/>
+</svg>
