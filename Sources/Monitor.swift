@@ -60,7 +60,10 @@ final class Monitor: NSObject, NSApplicationDelegate, NSPopoverDelegate, Observa
     var todayBudget: (share: Double, left: Double)? {
         guard let usage, usage.included, let window = usage.window(calendar: calendar),
               calendar.isDateInToday(usage.sampledAt), usage.reset.map({ $0 > Date() }) == true else { return nil }
-        let elapsed = calendar.dateComponents([.day], from: window.firstDay, to: calendar.startOfDay(for: usage.sampledAt)).day ?? 0
+        let elapsed = min(
+            window.count - 1,
+            max(0, Int(floor(usage.sampledAt.timeIntervalSince(window.periodStart) / 86_400)))
+        )
         let share = 100 / Double(window.count)
         let available = min(100, share * Double(max(1, elapsed + 1)))
         return (share, available - usage.used)

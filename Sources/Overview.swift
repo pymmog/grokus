@@ -39,7 +39,10 @@ struct Overview: View {
             if let usage = monitor.usage {
                 weeklyCard(usage)
                 if let window = usage.window(calendar: monitor.calendar), let budget = monitor.todayBudget {
-                    dailyCard(first: window.firstDay, count: window.count, share: budget.share, left: budget.left)
+                    dailyCard(
+                        periodStart: window.periodStart, periodEnd: window.periodEnd,
+                        count: window.count, share: budget.share, left: budget.left
+                    )
                 }
                 Text("Updated \(usage.sampledAt.formatted(date: .abbreviated, time: .shortened))")
                     .font(.caption).foregroundStyle(.secondary)
@@ -111,23 +114,27 @@ struct Overview: View {
         }
     }
 
-    private func dailyCard(first: Date, count: Int, share: Double, left: Double) -> some View {
+    private func dailyCard(
+        periodStart: Date, periodEnd: Date, count: Int, share: Double, left: Double
+    ) -> some View {
         let calendar = monitor.calendar
-        let selectedStart = calendar.date(byAdding: .day, value: -weeksBack * count, to: first) ?? first
-        let dates = (0..<count).compactMap { calendar.date(byAdding: .day, value: $0, to: selectedStart) }
-        let firstKey = UsageHistory.dayKey(selectedStart, calendar: calendar)
+        let anchor = calendar.date(byAdding: .day, value: -weeksBack * count, to: periodStart) ?? periodStart
+        let selectedEnd = calendar.date(byAdding: .day, value: -weeksBack * count, to: periodEnd) ?? periodEnd
+        let columnOrigin = calendar.startOfDay(for: anchor)
+        let dates = (0..<count).compactMap { calendar.date(byAdding: .day, value: $0, to: columnOrigin) }
+        let firstKey = UsageHistory.dayKey(columnOrigin, calendar: calendar)
         let hasEarlier = monitor.recordedDays.keys.contains { $0 < firstKey }
         let today = calendar.startOfDay(for: Date())
         let visibleDates = weeksBack == 0 && today > (dates.last ?? today) ? dates + [today] : dates
+        let periodDay = weeksBack == 0
+            ? min(count - 1, max(0, Int(floor(Date().timeIntervalSince(anchor) / 86_400)))) : nil
         return card {
             HStack {
                 heading("Daily budget")
                 Text(percent(share)).fontWeight(.semibold).monospacedDigit()
                 Spacer()
-                if let last = visibleDates.last {
-                    Text(selectedStart..<last, format: .interval.month(.abbreviated).day())
-                        .font(.caption).foregroundStyle(.secondary)
-                }
+                Text(anchor..<selectedEnd, format: .interval.month(.abbreviated).day().hour().minute())
+                    .font(.caption).foregroundStyle(.secondary)
                 Button { weeksBack += 1 } label: { Image(systemName: "chevron.left") }
                     .accessibilityLabel("Previous week").disabled(!hasEarlier)
                 Button { weeksBack -= 1 } label: { Image(systemName: "chevron.right") }
@@ -135,7 +142,7 @@ struct Overview: View {
             }
             .buttonStyle(.borderless)
             HStack(spacing: 4) {
-                ForEach(visibleDates, id: \.self) { day in
+                ForEach(Array(visibleDates.enumerated()), id: \.element) { offset, day in
                     let key = UsageHistory.dayKey(day, calendar: calendar)
                     let value = monitor.recordedDays[key]
                     let height = 49 * min(1, (value ?? 0) / share)
@@ -155,7 +162,7 @@ struct Overview: View {
                         Text(day.formatted(.dateTime.weekday(.abbreviated)))
                     }
                     .font(.caption2)
-                    .foregroundStyle(day == today ? .primary : .secondary)
+                    .foregroundStyle(periodDay == offset || day == today ? .primary : .secondary)
                     .frame(maxWidth: .infinity)
                 }
             }

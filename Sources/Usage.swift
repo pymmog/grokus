@@ -8,15 +8,19 @@ struct Usage: Codable {
     let included: Bool
     let sampledAt: Date
 
-    func window(calendar: Calendar) -> (firstDay: Date, count: Int)? {
+    func window(calendar: Calendar) -> (periodStart: Date, count: Int, periodEnd: Date)? {
         guard let reset, reset > sampledAt else { return nil }
-        let resetDay = calendar.startOfDay(for: reset)
-        let reportedDays = start.map {
-            calendar.dateComponents([.day], from: calendar.startOfDay(for: $0), to: resetDay).day ?? 0
-        } ?? 0
+        let reportedDays = start.map { max(0, Int((reset.timeIntervalSince($0) / 86_400).rounded())) } ?? 0
         let count = (6...8).contains(reportedDays) ? reportedDays : 7
-        guard let firstDay = calendar.date(byAdding: .day, value: -count, to: resetDay) else { return nil }
-        return (firstDay, count)
+        let periodStart: Date
+        if let start, start < reset {
+            periodStart = start
+        } else if let inferred = calendar.date(byAdding: .day, value: -count, to: reset) {
+            periodStart = inferred
+        } else {
+            return nil
+        }
+        return (periodStart, count, reset)
     }
 }
 
