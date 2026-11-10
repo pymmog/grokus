@@ -5,7 +5,9 @@ import SwiftUI
 import WebKit
 
 @MainActor
-final class Monitor: NSObject, NSApplicationDelegate, ObservableObject, WKUIDelegate, WKNavigationDelegate {
+final class Monitor: NSObject, NSApplicationDelegate, NSPopoverDelegate, ObservableObject, WKUIDelegate,
+    WKNavigationDelegate
+{
     @Published private(set) var usage: Usage?
     @Published private(set) var history: UsageHistory?
     @Published private(set) var tokenMonDays: [String: Double] = [:]
@@ -42,6 +44,7 @@ final class Monitor: NSObject, NSApplicationDelegate, ObservableObject, WKUIDele
     private let store = WKWebsiteDataStore.default()
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let overviewPopover = NSPopover()
+    private var outsideClickMonitor: Any?
     private var signInWindow: NSWindow?
     private var signingIntoGrok = false
     private var loginPopups: [NSWindow] = []
@@ -88,6 +91,7 @@ final class Monitor: NSObject, NSApplicationDelegate, ObservableObject, WKUIDele
     func applicationDidFinishLaunching(_ notification: Notification) {
         importTokenMonHistory()
         overviewPopover.behavior = .transient
+        overviewPopover.delegate = self
         let hosting = NSHostingController(rootView: Overview(monitor: self).frame(width: 355))
         hosting.sizingOptions = [.preferredContentSize]
         overviewPopover.contentViewController = hosting
@@ -121,6 +125,39 @@ final class Monitor: NSObject, NSApplicationDelegate, ObservableObject, WKUIDele
         guard let button = statusItem.button else { return }
         importTokenMonHistory()
         overviewPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+    }
+
+    private func startOutsideClickMonitor() {
+        stopOutsideClickMonitor()
+        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) {
+            [weak self] event in
+            self?.closePopoverIfClickedOutside(event)
+        }
+    }
+
+    private func stopOutsideClickMonitor() {
+        outsideClickMonitor.map { NSEvent.removeMonitor($0) }
+        outsideClickMonitor = nil
+    }
+
+    private func closePopoverIfClickedOutside(_ event: NSEvent) {
+        guard overviewPopover.isShown else { return }
+        if let popoverWindow = overviewPopover.contentViewController?.view.window, event.window === popoverWindow {
+            return
+        }
+        if let button = statusItem.button, let buttonWindow = button.window, event.window === buttonWindow,
+           button.bounds.contains(button.convert(event.locationInWindow, from: nil)) {
+            return
+        }
+        overviewPopover.performClose(nil)
+    }
+
+    func popoverDidShow(_ notification: Notification) {
+        startOutsideClickMonitor()
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        stopOutsideClickMonitor()
     }
 
     private func renderMeter() {
